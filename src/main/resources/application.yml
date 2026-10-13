@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: trimly-server
+
+  data:
+    mongodb:
+      uri: mongodb+srv://mumsifmumsif_db_user:bunv3b3cUselfGr9@trimlycluster.stcic8s.mongodb.net/trimly?retryWrites=true&w=majority&appName=TrimlyCluster
+      database: trimly
+
+  #mongodb+srv://mumsifmumsif_db_user:bunv3b3cUselfGr9@TrimlyCluster.mongodb.net/trimly?retryWrites=true&w=majority

@@ -1,0 +1,98 @@
+The 6 Core Code Files to Study
+Comprehensive educational study comments have been added directly to these files. You can open and read through them directly in IntelliJ.
+
+1.
+
+SlotCalculationService.java
+What it is: The core slot calculation algorithm engine.
+How it works:
+Fixed 45-min Matrix: Divides the salon operating day (08:15 to 22:30) into twenty 45-minute slots.
+Past Slot Filtering: If the requested date is today, slots prior to the current local time are tagged as "Passed".
+$O(1)$ Hash Set Checks: Loads active bookings and barber breaks for the day and indexes them as chairId_slotTime keys (e.g., "chair_1_10:30").
+Specific vs. "ANY" Chair:
+Specific chair: Checks if that single chair is booked or on break.
+"ANY" chair: Scans both chairs; if at least one chair is free, marks "Open" and assigns the available chair.
+2.
+
+BookingService.java
+What it is: The customer reservation pipeline.
+How it works:
+Chair Resolution: If the customer selects "ANY", it load-balances by finding the first chair unoccupied for that slot.
+Double-Booking Guard: Uses @Transactional and checks the database before inserting to prevent race conditions when two users attempt the same slot simultaneously.
+Pricing & Duration: Calculates totals from selected catalog services.
+OTP & Ticket Generation: Produces a 4-digit verification code (e.g. 4821) and ticket number (GS-XXXX).
+Live Queue Position: Counts all pending appointments preceding this customer on the assigned chair.
+3.
+
+QueueManagementService.java
+What it is: The operational heartbeat for the Barber Workstation.
+How it works:
+Live Chair Countdown: Calculates elapsedSeconds and remainingSeconds using Duration.between(startedAt, now).
+OTP Verification (verifyOtp): Changes status from PENDING → SEATED and records startedAt = LocalDateTime.now().
+Service Completion (completeService): Changes status to COMPLETED, records completedAt, and calls
+
+WalletService.deductCommission(salonId, 50.0)
+.
+Express Walk-Ins (registerWalkIn): Issues WI-XXX tickets. If the chair is free, the customer is seated immediately; otherwise queued.
+Cascading Delay Shifts (applyDelayShift): Moves downstream pending appointments forward by +15 minutes if a cut runs over.
+4.
+
+PublicBookingController.java
+What it is: The REST API gateway for the Customer mobile/web frontend (/api/v1/public).
+Key Endpoints to Inspect:
+GET /salons/{id}/slots: Calls
+
+SlotCalculationService
+.
+POST /bookings: Calls
+
+BookingService.createBooking
+.
+GET /bookings/{id}/pass: Returns the live digital queue pass for ticket polling.
+5.
+
+BarberController.java
+What it is: The REST API gateway for the Barber Tablet interface (/api/v1/barber).
+Key Endpoints to Inspect:
+GET /workstation/{salonId}: Returns current chairs, active customer countdown timers, upcoming queues, telemetry stats, and wallet balance.
+POST /verify-otp: Validates the customer's arrival code.
+POST /complete-service/{id}: Completes haircut and charges platform commission.
+POST /delay-shift: Adds +15 mins to downstream customer estimates.
+6.
+
+Appointment.java
+What it is: The core JPA database entity mapped to the appointments SQL table.
+Key Fields:
+ticketNumber: GS-1042 or WI-105
+otp: 4-digit code
+status:
+
+AppointmentStatus
+ (PENDING → SEATED → COMPLETED)
+startedAt & completedAt: Timestamps driving the barber's active countdown timer.
+Recommended Study Order in IntelliJ
+Start with the Domain: Open
+
+Appointment.java
+ to understand the data model and statuses.
+Follow the Customer Booking Flow: Read
+
+SlotCalculationService.java
+ followed by
+
+BookingService.java
+.
+Follow the Barber Workstation Flow: Read
+
+QueueManagementService.java
+ and
+
+WalletService.java
+.
+Examine the REST Controllers: Review
+
+PublicBookingController.java
+ and
+
+BarberController.java
+.
